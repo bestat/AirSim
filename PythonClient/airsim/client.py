@@ -301,7 +301,7 @@ class VehicleClient:
         """
         return CollisionInfo.from_msgpack(self.client.call('simGetCollisionInfo', vehicle_name))
 
-    def simSetVehiclePose(self, pose, ignore_collision, vehicle_name = ''):
+    def simSetVehiclePose(self, pose, ignore_collision=True, vehicle_name = ''):
         """
         Set the pose of the vehicle
 
@@ -418,7 +418,7 @@ class VehicleClient:
         """
         return self.client.call('simLoadLevel', level_name)
 
-    def simSpawnObject(self, object_name, asset_name, pose, scale, physics_enabled=False):
+    def simSpawnObject(self, object_name, asset_name, pose=Pose(), scale=Vector3r(1., 1., 1.), physics_enabled=False):
         """Spawned selected object in the world
         
         Args:

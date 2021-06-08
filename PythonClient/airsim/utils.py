@@ -23,6 +23,10 @@ def list_to_2d_float_array(flst, width, height):
 def get_pfm_array(response):
     return list_to_2d_float_array(response.image_data_float, response.width, response.height)
 
+def decode_image_response(response):
+    dtype = np.float16 if response.pixels_as_float else np.uint8
+    nch = 1 if response.pixels_as_float else 3
+    return np.frombuffer(response.image_data_uint8, dtype=dtype).reshape(response.height, response.width, nch)
     
 def get_public_fields(obj):
     return [attr for attr in dir(obj)

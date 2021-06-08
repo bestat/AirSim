@@ -233,6 +233,20 @@ class Pose(MsgpackMixin):
         self.position = position_val
         self.orientation = orientation_val
 
+    def __mul__(self, other):
+        if type(self) != type(other):
+            raise TypeError('unsupported operand type(s) for *: %s and %s' % ( str(type(self)), str(type(other))) )
+
+        # use the famous dual quaternion representation of rigid poses
+        q0 = self.orientation
+        t0 = Quaternionr(0.5 * self.position.x_val, 0.5 * self.position.y_val, 0.5 * self.position.z_val, 0.)
+        q1 = other.orientation
+        q1_star = q1.star()
+        t1 = Quaternionr(0.5 * other.position.x_val, 0.5 * other.position.y_val, 0.5 * other.position.z_val, 0.)
+        q2 = q1 * q0
+        t2 = q1 * t0 * q1_star + t1
+        return Pose(Vector3r(2. * t2.x_val, 2. * t2.y_val, 2. * t2.z_val), q2)
+
     @staticmethod
     def nanPose():
         return Pose(Vector3r.nanVector3r(), Quaternionr.nanQuaternionr())
@@ -240,6 +254,17 @@ class Pose(MsgpackMixin):
     def containsNan(self):
         return (self.position.containsNan() or self.orientation.containsNan())
 
+    def UE4ToAirSim(self):
+        return Pose(
+            Vector3r(0.01 * self.position.x_val, 0.01 * self.position.y_val, -0.01 * self.position.z_val),
+            Quaternionr(-self.orientation.x_val, -self.orientation.y_val, self.orientation.z_val, self.orientation.w_val)
+        )
+
+    def AirSimToUE4(self):
+        return Pose(
+            Vector3r(100. * self.position.x_val, 100. * self.position.y_val, -100. * self.position.z_val),
+            Quaternionr(-self.orientation.x_val, -self.orientation.y_val, self.orientation.z_val, self.orientation.w_val)
+        )
 
 class CollisionInfo(MsgpackMixin):
     has_collided = False
@@ -294,7 +319,7 @@ class ImageRequest(MsgpackMixin):
     pixels_as_float = False
     compress = False
 
-    def __init__(self, camera_name, image_type, pixels_as_float = False, compress = True):
+    def __init__(self, camera_name, image_type, pixels_as_float = False, compress = False):
         # todo: in future remove str(), it's only for compatibility to pre v1.2
         self.camera_name = str(camera_name)
         self.image_type = image_type
