@@ -7,12 +7,14 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Index &mdash; airsim 1.2.8 documentation</title>
+  <title>Index &mdash; airsim 1.5.0 documentation</title>
   
 
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
 
   
   
@@ -29,6 +31,7 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
@@ -59,6 +62,10 @@
 
           
             
+            
+              <div class="version">
+                1.5.0
+              </div>
             
           
 
@@ -298,7 +305,7 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="index.html#airsim.types.ImageType.DepthPerspective">DepthPerspective (airsim.types.ImageType attribute)</a>
 </li>
-      <li><a href="index.html#airsim.types.ImageType.DepthPlanner">DepthPlanner (airsim.types.ImageType attribute)</a>
+      <li><a href="index.html#airsim.types.ImageType.DepthPlanar">DepthPlanar (airsim.types.ImageType attribute)</a>
 </li>
       <li><a href="index.html#airsim.types.ImageType.DepthVis">DepthVis (airsim.types.ImageType attribute)</a>
 </li>
@@ -404,10 +411,10 @@
 </li>
       <li><a href="index.html#airsim.client.VehicleClient.getImuData">getImuData() (airsim.client.VehicleClient method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="index.html#airsim.client.VehicleClient.getLidarData">getLidarData() (airsim.client.VehicleClient method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="index.html#airsim.client.VehicleClient.getMagnetometerData">getMagnetometerData() (airsim.client.VehicleClient method)</a>
 </li>
       <li><a href="index.html#airsim.client.VehicleClient.getMinRequiredClientVersion">getMinRequiredClientVersion() (airsim.client.VehicleClient method)</a>
@@ -419,6 +426,8 @@
       <li><a href="index.html#airsim.client.MultirotorClient.getRotorStates">getRotorStates() (airsim.client.MultirotorClient method)</a>
 </li>
       <li><a href="index.html#airsim.client.VehicleClient.getServerVersion">getServerVersion() (airsim.client.VehicleClient method)</a>
+</li>
+      <li><a href="index.html#airsim.client.VehicleClient.getSettingsString">getSettingsString() (airsim.client.VehicleClient method)</a>
 </li>
       <li><a href="index.html#airsim.types.GpsData.gnss">gnss (airsim.types.GpsData attribute)</a>
 </li>
@@ -550,10 +559,10 @@
 </li>
       <li><a href="index.html#airsim.types.GeoPoint.latitude">latitude (airsim.types.GeoPoint attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="index.html#airsim.types.LidarData">LidarData (class in airsim.types)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="index.html#airsim.types.ImuData.linear_acceleration">linear_acceleration (airsim.types.ImuData attribute)</a>
 
       <ul>
@@ -563,6 +572,8 @@
       <li><a href="index.html#airsim.types.KinematicsState.linear_velocity">linear_velocity (airsim.types.KinematicsState attribute)</a>
 </li>
       <li><a href="index.html#airsim.utils.list_to_2d_float_array">list_to_2d_float_array() (in module airsim.utils)</a>
+</li>
+      <li><a href="index.html#airsim.client.VehicleClient.listVehicles">listVehicles() (airsim.client.VehicleClient method)</a>
 </li>
       <li><a href="index.html#airsim.types.GeoPoint.longitude">longitude (airsim.types.GeoPoint attribute)</a>
 </li>
@@ -609,10 +620,10 @@
 </li>
       <li><a href="index.html#airsim.client.MultirotorClient.moveByAngleRatesZAsync">moveByAngleRatesZAsync() (airsim.client.MultirotorClient method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="index.html#airsim.client.MultirotorClient.moveByAngleThrottleAsync">moveByAngleThrottleAsync() (airsim.client.MultirotorClient method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="index.html#airsim.client.MultirotorClient.moveByAngleZAsync">moveByAngleZAsync() (airsim.client.MultirotorClient method)</a>
 </li>
       <li><a href="index.html#airsim.client.MultirotorClient.moveByManualAsync">moveByManualAsync() (airsim.client.MultirotorClient method)</a>
@@ -634,6 +645,8 @@
       <li><a href="index.html#airsim.client.MultirotorClient.moveByVelocityBodyFrameAsync">moveByVelocityBodyFrameAsync() (airsim.client.MultirotorClient method)</a>
 </li>
       <li><a href="index.html#airsim.client.MultirotorClient.moveByVelocityZAsync">moveByVelocityZAsync() (airsim.client.MultirotorClient method)</a>
+</li>
+      <li><a href="index.html#airsim.client.MultirotorClient.moveByVelocityZBodyFrameAsync">moveByVelocityZBodyFrameAsync() (airsim.client.MultirotorClient method)</a>
 </li>
       <li><a href="index.html#airsim.client.MultirotorClient.moveOnPathAsync">moveOnPathAsync() (airsim.client.MultirotorClient method)</a>
 </li>
@@ -879,6 +892,8 @@
 </li>
       <li><a href="index.html#airsim.client.VehicleClient.simListSceneObjects">simListSceneObjects() (airsim.client.VehicleClient method)</a>
 </li>
+      <li><a href="index.html#airsim.client.VehicleClient.simLoadLevel">simLoadLevel() (airsim.client.VehicleClient method)</a>
+</li>
       <li><a href="index.html#airsim.client.VehicleClient.simPause">simPause() (airsim.client.VehicleClient method)</a>
 </li>
       <li><a href="index.html#airsim.client.VehicleClient.simPlotArrows">simPlotArrows() (airsim.client.VehicleClient method)</a>
@@ -887,10 +902,10 @@
 </li>
       <li><a href="index.html#airsim.client.VehicleClient.simPlotLineStrip">simPlotLineStrip() (airsim.client.VehicleClient method)</a>
 </li>
-      <li><a href="index.html#airsim.client.VehicleClient.simPlotPoints">simPlotPoints() (airsim.client.VehicleClient method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="index.html#airsim.client.VehicleClient.simPlotPoints">simPlotPoints() (airsim.client.VehicleClient method)</a>
+</li>
       <li><a href="index.html#airsim.client.VehicleClient.simPlotStrings">simPlotStrings() (airsim.client.VehicleClient method)</a>
 </li>
       <li><a href="index.html#airsim.client.VehicleClient.simPlotTransforms">simPlotTransforms() (airsim.client.VehicleClient method)</a>
@@ -1070,8 +1085,6 @@
       <li><a href="index.html#airsim.types.Quaternionr.w_val">w_val (airsim.types.Quaternionr attribute)</a>
 </li>
       <li><a href="index.html#airsim.utils.wait_key">wait_key() (in module airsim.utils)</a>
-</li>
-      <li><a href="index.html#airsim.client.VehicleClient.waitOnLastTask">waitOnLastTask() (airsim.client.VehicleClient method)</a>
 </li>
       <li><a href="index.html#airsim.types.WeatherParameter">WeatherParameter (class in airsim.types)</a>
 </li>
