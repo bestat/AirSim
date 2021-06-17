@@ -117,10 +117,23 @@ void RenderRequest::getScreenshot(std::shared_ptr<RenderParams> params[], std::v
             }
         }
         else {
+            /*
             results[i]->image_data_float.SetNumUninitialized(results[i]->width * results[i]->height);
             float* ptr = results[i]->image_data_float.GetData();
             for (const auto& item : results[i]->bmp_float) {
                 *ptr++ = item.R.GetFloat();
+            }
+            */
+
+            // we'd like to stick to using uint8 arrays rather than float arrays since it looks that msgpack-rpc can deal with them much faster.
+            // remark 1: python clients should decode float arrays using np.frombuffer(*, dtype=np.float16).
+            // remark 2: UE4 may not allow to use depth24 buffer thus obtained depth values could be not such accurate at far range.
+            results[i]->image_data_uint8.SetNumUninitialized(results[i]->width * results[i]->height * 2, false);
+            uint8* ptr = results[i]->image_data_uint8.GetData();
+            for (const auto& item : results[i]->bmp_float) {
+                const FFloat16 val = item.R;
+                memcpy(ptr, &val, sizeof(FFloat16));
+                ptr += sizeof(FFloat16) / sizeof(uint8);
             }
         }
     }
