@@ -566,11 +566,10 @@ namespace airlib
             //get the simmode from user if not specified
             simmode_name = settings_json.getString("SimMode", "");
             if (simmode_name == "") {
-                //if (simmode_getter)
-                //    simmode_name = simmode_getter();
-                //else
-                //    throw std::invalid_argument("simmode_name is not expected empty in SimModeBase");
-				simmode_name = kSimModeTypeComputerVision;  // we set the default mode to be ComputerVision for our convenience.
+                if (simmode_getter)
+                    simmode_name = simmode_getter();
+                else
+                    throw std::invalid_argument("simmode_name is not expected empty in SimModeBase");
             }
 
             physics_engine_name = settings_json.getString("PhysicsEngineName", "");
