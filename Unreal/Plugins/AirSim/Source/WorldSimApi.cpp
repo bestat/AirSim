@@ -8,6 +8,7 @@
 #include "Runtime/Engine/Classes/Engine/Engine.h"
 #include <cstdlib>
 #include <ctime>
+#include "MetahumanAnimInstance.h"
 
 WorldSimApi::WorldSimApi(ASimModeBase* simmode)
     : simmode_(simmode) {}
@@ -81,46 +82,100 @@ bool WorldSimApi::destroyObject(const std::string& object_name)
     return result;
 }
 
-std::string WorldSimApi::spawnObject(std::string& object_name, const std::string& load_object, const WorldSimApi::Pose& pose, const WorldSimApi::Vector3r& scale, bool physics_enabled)
+std::string WorldSimApi::spawnObject(std::string& object_name, const std::string& load_object, const WorldSimApi::Pose& pose, const WorldSimApi::Vector3r& scale, bool physics_enabled, bool from_actorBP)
 {
     // Create struct for Location and Rotation of actor in Unreal
     FTransform actor_transform = simmode_->getGlobalNedTransform().fromGlobalNed(pose);
 
     bool found_object = false, spawned_object = false;
-    UAirBlueprintLib::RunCommandOnGameThread([this, load_object, &object_name, &actor_transform, &found_object, &spawned_object, &scale, &physics_enabled]() {
-        FString asset_name = FString(load_object.c_str());
-        FAssetData* LoadAsset = simmode_->asset_map.Find(asset_name);
+    UAirBlueprintLib::RunCommandOnGameThread([this, load_object, &object_name, &actor_transform, &found_object, &spawned_object, &scale, &physics_enabled, &from_actorBP]() {
+        
+		if (from_actorBP) {
+			
+			FString actorBP_name = FString(load_object.c_str());
+			TSubclassOf<class AActor> sc = TSoftClassPtr<AActor>(FSoftObjectPath(*actorBP_name)).LoadSynchronous();
 
-        if (LoadAsset) {
-            found_object = true;
-            UStaticMesh* LoadObject = dynamic_cast<UStaticMesh*>(LoadAsset->GetAsset());
-            std::vector<std::string> matching_names = UAirBlueprintLib::ListMatchingActors(simmode_->GetWorld(), ".*" + object_name + ".*");
-            if (matching_names.size() > 0) {
-                size_t greatest_num{ 0 }, result{ 0 };
-                for (auto match : matching_names) {
-                    std::string number_extension = match.substr(match.find_last_not_of("0123456789") + 1);
-                    if (number_extension != "") {
-                        result = std::stoi(number_extension);
-                        greatest_num = greatest_num > result ? greatest_num : result;
-                    }
-                }
-                object_name += std::to_string(greatest_num + 1);
-            }
-            FActorSpawnParameters new_actor_spawn_params;
-            new_actor_spawn_params.Name = FName(object_name.c_str());
-            //new_actor_spawn_params.NameMode = FActorSpawnParameters::ESpawnActorNameMode::Required_ReturnNull;
-            AActor* NewActor = this->createNewActor(new_actor_spawn_params, actor_transform, scale, LoadObject);
+			if (sc) {
+				found_object = true;
+				std::vector<std::string> matching_names = UAirBlueprintLib::ListMatchingActors(simmode_->GetWorld(), ".*" + object_name + ".*");
+				if (matching_names.size() > 0) {
+					size_t greatest_num{ 0 }, result{ 0 };
+					for (auto match : matching_names) {
+						std::string number_extension = match.substr(match.find_last_not_of("0123456789") + 1);
+						if (number_extension != "") {
+							result = std::stoi(number_extension);
+							greatest_num = greatest_num > result ? greatest_num : result;
+						}
+					}
+					object_name += std::to_string(greatest_num + 1);
+				}
+				FActorSpawnParameters new_actor_spawn_params;
+				new_actor_spawn_params.Name = FName(object_name.c_str());
 
-            if (NewActor) {
-                spawned_object = true;
-                simmode_->scene_object_map.Add(FString(object_name.c_str()), NewActor);
-            }
+				AActor* NewActor = simmode_->GetWorld()->SpawnActor<AActor>(sc, FVector::ZeroVector, FRotator::ZeroRotator, new_actor_spawn_params);
 
-            UAirBlueprintLib::setSimulatePhysics(NewActor, physics_enabled);
-        }
-        else {
-            found_object = false;
-        }
+				if (NewActor) {
+					NewActor->SetActorLocationAndRotation(actor_transform.GetLocation(), actor_transform.GetRotation(), false, nullptr, ETeleportType::TeleportPhysics);
+					NewActor->SetActorScale3D(FVector(scale[0], scale[1], scale[2]));
+
+					// if the generated actor is a metahuman, we automatically set MetaHumanAnimBP to its body.
+					USkeletalMeshComponent* body = Cast<USkeletalMeshComponent>(NewActor->GetDefaultSubobjectByName(FName(TEXT("Body"))));
+					if (body) {
+						UAnimBlueprint* AnimBP = TSoftObjectPtr<UAnimBlueprint>(FSoftObjectPath(TEXT("/AirSim/bestat/metahuman_base_skel_AnimBP.metahuman_base_skel_AnimBP"))).LoadSynchronous();
+						if (AnimBP) {
+							body->SetAnimInstanceClass(AnimBP->GetAnimBlueprintGeneratedClass());
+						}
+					}
+
+					// TODO: might need to add skeltal mesh to simmode's mesh 
+					spawned_object = true;
+					simmode_->scene_object_map.Add(FString(object_name.c_str()), NewActor);
+				}
+				else{
+					spawned_object = false;
+				}
+			}
+			else {
+				found_object = false;
+			}
+		}
+		else {
+
+			FString asset_name = FString(load_object.c_str());
+			FAssetData* LoadAsset = simmode_->asset_map.Find(asset_name);
+
+			if (LoadAsset) {
+				found_object = true;
+				UStaticMesh* LoadObject = dynamic_cast<UStaticMesh*>(LoadAsset->GetAsset());
+				std::vector<std::string> matching_names = UAirBlueprintLib::ListMatchingActors(simmode_->GetWorld(), ".*" + object_name + ".*");
+				if (matching_names.size() > 0) {
+					size_t greatest_num{ 0 }, result{ 0 };
+					for (auto match : matching_names) {
+						std::string number_extension = match.substr(match.find_last_not_of("0123456789") + 1);
+						if (number_extension != "") {
+							result = std::stoi(number_extension);
+							greatest_num = greatest_num > result ? greatest_num : result;
+						}
+					}
+					object_name += std::to_string(greatest_num + 1);
+				}
+				FActorSpawnParameters new_actor_spawn_params;
+				new_actor_spawn_params.Name = FName(object_name.c_str());
+				//new_actor_spawn_params.NameMode = FActorSpawnParameters::ESpawnActorNameMode::Required_ReturnNull;
+				AActor* NewActor = this->createNewActor(new_actor_spawn_params, actor_transform, scale, LoadObject);
+
+				if (NewActor) {
+					spawned_object = true;
+					simmode_->scene_object_map.Add(FString(object_name.c_str()), NewActor);
+				}
+
+				UAirBlueprintLib::setSimulatePhysics(NewActor, physics_enabled);
+			}
+			else {
+				found_object = false;
+			}
+
+		}
     },
                                              true);
 
@@ -373,6 +428,38 @@ bool WorldSimApi::setObjectScale(const std::string& object_name, const Vector3r&
     },
                                              true);
     return result;
+}
+
+bool WorldSimApi::setMetahumanPose(const std::string& object_name, const Vector3r& left_hand_IKposition, const Vector3r& left_hand_rotation, const Vector3r& right_hand_IKposition, const Vector3r& right_hand_rotation)
+{
+	bool result;
+	UAirBlueprintLib::RunCommandOnGameThread([this, &object_name, &left_hand_IKposition, &left_hand_rotation, &right_hand_IKposition, &right_hand_rotation, &result]() {
+		result = false;
+
+		// AActor* actor = UAirBlueprintLib::FindActor<AActor>(simmode_, FString(object_name.c_str()));
+		AActor* actor = simmode_->scene_object_map.FindRef(FString(object_name.c_str()));
+		if (!actor)
+			return;
+	
+		USkeletalMeshComponent* body = Cast<USkeletalMeshComponent>(actor->GetDefaultSubobjectByName(FName("Body")));
+		if (!body)
+			return;
+
+		UMetahumanAnimInstance* animInstance = Cast<UMetahumanAnimInstance>(body->GetAnimInstance());
+		if (!animInstance)
+			return;
+
+		animInstance->SetMetahumanPose(
+			FVector(left_hand_IKposition[0], left_hand_IKposition[1], left_hand_IKposition[2]),
+			FRotator(left_hand_rotation[0], left_hand_rotation[1], left_hand_rotation[2]),
+			FVector(right_hand_IKposition[0], right_hand_IKposition[1], right_hand_IKposition[2]),
+			FRotator(right_hand_rotation[0], right_hand_rotation[1], right_hand_rotation[2])
+		);
+
+		result = true;
+	},
+		true);
+	return result;
 }
 
 void WorldSimApi::enableWeather(bool enable)

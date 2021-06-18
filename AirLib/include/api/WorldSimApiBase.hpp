@@ -32,7 +32,7 @@ namespace airlib
 
         // ------ Level setting apis ----- //
         virtual bool loadLevel(const std::string& level_name) = 0;
-        virtual string spawnObject(string& object_name, const string& load_component, const Pose& pose, const Vector3r& scale, bool physics_enabled) = 0;
+        virtual string spawnObject(string& object_name, const string& load_component, const Pose& pose, const Vector3r& scale, bool physics_enabled, bool from_actorBP) = 0;
         virtual bool destroyObject(const string& object_name) = 0;
 
         virtual bool isPaused() const = 0;
@@ -71,6 +71,7 @@ namespace airlib
         virtual bool setObjectPose(const std::string& object_name, const Pose& pose, bool teleport) = 0;
         virtual bool runConsoleCommand(const std::string& command) = 0;
         virtual bool setObjectScale(const std::string& object_name, const Vector3r& scale) = 0;
+        virtual bool setMetahumanPose(const std::string& object_name, const Vector3r& left_hand_IKposition, const Vector3r& left_hand_rotation, const Vector3r& right_hand_IKposition, const Vector3r& right_hand_rotation) = 0;
         virtual std::unique_ptr<std::vector<std::string>> swapTextures(const std::string& tag, int tex_id = 0, int component_id = 0, int material_id = 0) = 0;
         virtual vector<MeshPositionVertexBuffersResponse> getMeshPositionVertexBuffers() const = 0;
 

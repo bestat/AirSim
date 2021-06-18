@@ -21,7 +21,7 @@ public:
 
     virtual bool loadLevel(const std::string& level_name) override;
 
-    virtual std::string spawnObject(std::string& object_name, const std::string& load_name, const WorldSimApi::Pose& pose, const WorldSimApi::Vector3r& scale, bool physics_enabled) override;
+    virtual std::string spawnObject(std::string& object_name, const std::string& load_name, const WorldSimApi::Pose& pose, const WorldSimApi::Vector3r& scale, bool physics_enabled, bool from_actorBP) override;
     virtual bool destroyObject(const std::string& object_name) override;
 
     virtual bool isPaused() const override;
@@ -51,6 +51,7 @@ public:
     virtual bool runConsoleCommand(const std::string& command) override;
     virtual Vector3r getObjectScale(const std::string& object_name) const override;
     virtual bool setObjectScale(const std::string& object_name, const Vector3r& scale) override;
+	virtual bool setMetahumanPose(const std::string& object_name, const Vector3r& left_hand_IKposition, const Vector3r& left_hand_rotation, const Vector3r& right_hand_IKposition, const Vector3r& right_hand_rotation);
 
     //----------- Plotting APIs ----------/
     virtual void simFlushPersistentMarkers() override;

@@ -301,7 +301,7 @@ class VehicleClient:
         """
         return CollisionInfo.from_msgpack(self.client.call('simGetCollisionInfo', vehicle_name))
 
-    def simSetVehiclePose(self, pose, ignore_collision, vehicle_name = ''):
+    def simSetVehiclePose(self, pose, ignore_collision=True, vehicle_name = ''):
         """
         Set the pose of the vehicle
 
@@ -392,6 +392,9 @@ class VehicleClient:
         """
         return self.client.call('simSetObjectScale', object_name, scale_vector)
 
+    def simSetMetahumanPose(self, object_name, left_hand_IKposition, left_hand_rotation, right_hand_IKposition, right_hand_rotation):
+        return self.client.call('simSetMetahumanPose', object_name, left_hand_IKposition, left_hand_rotation, right_hand_IKposition, right_hand_rotation)
+
     def simListSceneObjects(self, name_regex = '.*'):
         """
         Lists the objects present in the environment
@@ -418,7 +421,7 @@ class VehicleClient:
         """
         return self.client.call('simLoadLevel', level_name)
 
-    def simSpawnObject(self, object_name, asset_name, pose, scale, physics_enabled=False):
+    def simSpawnObject(self, object_name, asset_name, pose=Pose(), scale=Vector3r(1., 1., 1.), physics_enabled=False, from_actorBP=False):
         """Spawned selected object in the world
         
         Args:
@@ -426,11 +429,12 @@ class VehicleClient:
             asset_name (str): Name of asset(mesh) in the project database
             pose (airsim.Pose): Desired pose of object
             scale (airsim.Vector3r): Desired scale of object
+            from_actorBP (bool): spawn actor directly using specified actorBP instead of just setting static mesh to a new actor
         
         Returns:
             str: Name of spawned object, in case it had to be modified
         """
-        return self.client.call('simSpawnObject', object_name, asset_name, pose, scale, physics_enabled)
+        return self.client.call('simSpawnObject', object_name, asset_name, pose, scale, physics_enabled, from_actorBP)
 
     def simDestroyObject(self, object_name):
         """Removes selected object from the world
@@ -583,6 +587,36 @@ class VehicleClient:
         """
         # TODO: below str() conversion is only needed for legacy reason and should be removed in future
         self.client.call('simSetCameraFov', str(camera_name), fov_degrees, vehicle_name)
+
+    def simSetCameraImageSize(self, camera_name, width, height, vehicle_name = ''):
+        self.client.call('simSetCameraImageSize', str(camera_name), width, height, vehicle_name)
+
+    def simSetCameraPostProcess(self,
+            camera_name,
+            blend_weight = 1.0,
+            bloom_intensity = math.nan,
+            auto_exposure_method = -1, auto_exposure_bias = math.nan,
+            auto_exposure_speed_up = math.nan, auto_exposure_speed_down = math.nan,
+            auto_exposure_max_brightness = math.nan, auto_exposure_min_brightness = math.nan,
+            lens_flare_intensity = math.nan,
+            ambient_occlusion_intensity = math.nan, ambient_occlusion_radius = math.nan,
+            indirect_lighting_color_rgb = [math.nan, math.nan, math.nan], indirect_lighting_intensity = math.nan,
+            motion_blur_amount = math.nan,
+            vehicle_name = ''
+        ):
+        self.client.call('simSetCameraPostProcess',
+            str(camera_name),
+            blend_weight,
+            bloom_intensity,
+            auto_exposure_method, auto_exposure_bias,
+            auto_exposure_speed_up, auto_exposure_speed_down,
+            auto_exposure_max_brightness, auto_exposure_min_brightness,
+            lens_flare_intensity,
+            ambient_occlusion_intensity, ambient_occlusion_radius,
+            indirect_lighting_color_rgb, indirect_lighting_intensity,
+            motion_blur_amount,
+            vehicle_name
+        )
 
     def simGetGroundTruthKinematics(self, vehicle_name = ''):
         """
