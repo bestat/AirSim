@@ -82,6 +82,19 @@ public: //implementation of VehicleSimApiBase
     virtual void setCameraFoV(const std::string& camera_name, float fov_degrees) override;
     virtual void setDistortionParam(const std::string& camera_name, const std::string& param_name, float value) override;
     virtual std::vector<float> getDistortionParams(const std::string& camera_name) override;
+	virtual void setCameraImageSize(const std::string& camera_name, const float width, const float height) override;
+	virtual void setCameraPostProcess(
+		const std::string& camera_name,
+		const float blend_weight,
+		const float bloom_intensity,
+		const int auto_exposure_method, const float auto_exposure_bias,
+		const float auto_exposure_speed_up, const float auto_exposure_speed_down,
+		const float auto_exposure_max_brightness, const float auto_exposure_min_brightness,
+		const float lens_flare_intensity,
+		const float ambient_occlusion_intensity, const float ambient_occlusion_radius,
+		const std::vector<float>& indirect_lighting_color_rgb, const float indirect_lighting_intensity,
+		const float motion_blur_amount
+	) override;
 
     virtual CollisionInfo getCollisionInfo() const override;
     virtual int getRemoteControlID() const override;

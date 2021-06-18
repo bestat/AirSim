@@ -281,6 +281,100 @@ void APIPCamera::setCameraFoV(float fov_degrees)
     camera_->SetFieldOfView(fov_degrees);
 }
 
+void APIPCamera::setCameraImageSize(const float width, const float height)
+{
+	int image_count = static_cast<int>(Utils::toNumeric(ImageType::Count));
+	for (int image_type = 0; image_type < image_count; ++image_type) {
+		auto img_type = Utils::toEnum<ImageType>(image_type);
+
+		auto& capture = captures_[image_type];
+		auto& render_target = render_targets_[image_type];
+		auto pixel_format = image_type_to_pixel_format_map_[image_type];
+
+		bool auto_format = true;
+		if (img_type == ImageType::Scene || img_type == ImageType::Infrared)
+			auto_format = false;
+
+		bool force_linear_gamma = false;
+
+		if (auto_format) {
+			render_target->InitAutoFormat(width, height);
+		}
+		else {
+			render_target->InitCustomFormat(width, height, pixel_format, force_linear_gamma);
+		}
+	}
+}
+
+void APIPCamera::setCameraPostProcess(
+	const float blend_weight,
+	const float bloom_intensity,
+	const int auto_exposure_method, const float auto_exposure_bias,
+	const float auto_exposure_speed_up, const float auto_exposure_speed_down,
+	const float auto_exposure_max_brightness, const float auto_exposure_min_brightness,
+	const float lens_flare_intensity,
+	const float ambient_occlusion_intensity, const float ambient_occlusion_radius,
+	const FLinearColor& indirect_lighting_color, const float indirect_lighting_intensity,
+	const float motion_blur_amount
+	)
+{
+	// we will not implement an API to set the camera component's postprocess settings because we will only use the captured images.
+	
+	auto& capture = captures_[Utils::toNumeric(ImageType::Scene)];
+	auto& render_target = render_targets_[Utils::toNumeric(ImageType::Scene)];
+	//render_target->TargetGamma = 1.f;
+
+	capture->PostProcessBlendWeight = blend_weight;
+
+	auto& obj = capture->PostProcessSettings;
+	
+	// TODO: bloom
+	obj.bOverride_BloomIntensity = !!!std::isnan(bloom_intensity);
+	if (obj.bOverride_BloomIntensity) obj.BloomIntensity = bloom_intensity;
+
+	obj.bOverride_AutoExposureMethod = !!!(auto_exposure_method < 0);
+	if (obj.bOverride_AutoExposureMethod) obj.AutoExposureMethod = Utils::toEnum<EAutoExposureMethod>(auto_exposure_method);
+
+	obj.bOverride_AutoExposureBias = !!!std::isnan(auto_exposure_bias);
+	if (obj.bOverride_AutoExposureBias) obj.AutoExposureBias = auto_exposure_bias;
+
+	obj.bOverride_AutoExposureSpeedUp = !!!std::isnan(auto_exposure_speed_up);
+	if (obj.bOverride_AutoExposureSpeedUp) obj.AutoExposureSpeedUp = auto_exposure_speed_up;
+
+	obj.bOverride_AutoExposureSpeedDown = !!!std::isnan(auto_exposure_speed_down);
+	if (obj.bOverride_AutoExposureSpeedDown) obj.AutoExposureSpeedDown = auto_exposure_speed_down;
+
+	obj.bOverride_AutoExposureMaxBrightness = !!!std::isnan(auto_exposure_max_brightness);
+	if (obj.bOverride_AutoExposureMaxBrightness) obj.AutoExposureMaxBrightness = auto_exposure_max_brightness;
+
+	obj.bOverride_AutoExposureMinBrightness = !!!std::isnan(auto_exposure_min_brightness);
+	if (obj.bOverride_AutoExposureMinBrightness) obj.AutoExposureMinBrightness = auto_exposure_min_brightness;
+
+	// TODO: might add the detailed settings for exposure
+	
+	obj.bOverride_LensFlareIntensity = !!!std::isnan(lens_flare_intensity);
+	if (obj.bOverride_LensFlareIntensity) obj.LensFlareIntensity = lens_flare_intensity;
+
+	// TODO: might add grain jitter
+
+	// TODO: might add color grading
+
+	obj.bOverride_AmbientOcclusionIntensity = !!!std::isnan(ambient_occlusion_intensity);
+	if (obj.bOverride_AmbientOcclusionIntensity) obj.AmbientOcclusionIntensity = ambient_occlusion_intensity;
+
+	obj.bOverride_AmbientOcclusionRadius = !!!std::isnan(ambient_occlusion_radius);
+	if (obj.bOverride_AmbientOcclusionRadius) obj.AmbientOcclusionRadius = ambient_occlusion_radius;
+
+	obj.bOverride_IndirectLightingColor = !!!std::isnan(indirect_lighting_color.R);
+	if (obj.bOverride_IndirectLightingColor) obj.IndirectLightingColor = indirect_lighting_color;
+
+	obj.bOverride_IndirectLightingIntensity = !!!std::isnan(indirect_lighting_intensity);
+	if (obj.bOverride_IndirectLightingIntensity) obj.IndirectLightingIntensity = indirect_lighting_intensity;
+
+	obj.bOverride_MotionBlurAmount = !!!std::isnan(motion_blur_amount);
+	if (obj.bOverride_MotionBlurAmount) obj.MotionBlurAmount = motion_blur_amount;
+}
+
 void APIPCamera::setupCameraFromSettings(const APIPCamera::CameraSetting& camera_setting, const NedTransform& ned_transform)
 {
     //TODO: should we be ignoring position and orientation settings here?

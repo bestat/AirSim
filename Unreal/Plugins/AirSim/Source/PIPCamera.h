@@ -43,6 +43,18 @@ public:
     void setupCameraFromSettings(const APIPCamera::CameraSetting& camera_setting, const NedTransform& ned_transform);
     void setCameraPose(const FTransform& pose);
     void setCameraFoV(float fov_degrees);
+	void setCameraImageSize(const float width, const float height);
+	void setCameraPostProcess(
+		const float blend_weight,
+		const float bloom_intensity,
+		const int auto_exposure_method, const float auto_exposure_bias,
+		const float auto_exposure_speed_up, const float auto_exposure_speed_down,
+		const float auto_exposure_max_brightness, const float auto_exposure_min_brightness,
+		const float lens_flare_intensity,
+		const float ambient_occlusion_intensity, const float ambient_occlusion_radius,
+		const FLinearColor& indirect_lighting_color, const float indirect_lighting_intensity,
+		const float motion_blur_amount
+	);
 
     msr::airlib::ProjectionMatrix getProjectionMatrix(const APIPCamera::ImageType image_type) const;
 

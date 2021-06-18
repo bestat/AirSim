@@ -450,6 +450,58 @@ std::vector<float> PawnSimApi::getDistortionParams(const std::string& camera_nam
     return param_values;
 }
 
+void PawnSimApi::setCameraImageSize(const std::string& camera_name, const float width, const float height)
+{
+	UAirBlueprintLib::RunCommandOnGameThread([this, camera_name, width, height]() {
+		APIPCamera* camera = getCamera(camera_name);
+		camera->setCameraImageSize(width, height);
+	},
+		true);
+}
+
+void PawnSimApi::setCameraPostProcess(
+	const std::string& camera_name,
+	const float blend_weight,
+	const float bloom_intensity,
+	const int auto_exposure_method, const float auto_exposure_bias,
+	const float auto_exposure_speed_up, const float auto_exposure_speed_down,
+	const float auto_exposure_max_brightness, const float auto_exposure_min_brightness,
+	const float lens_flare_intensity,
+	const float ambient_occlusion_intensity, const float ambient_occlusion_radius,
+	const std::vector<float>& indirect_lighting_color_rgb, const float indirect_lighting_intensity,
+	const float motion_blur_amount
+	)
+{
+	UAirBlueprintLib::RunCommandOnGameThread(
+		[
+			this, camera_name,
+			blend_weight,
+			bloom_intensity,
+			auto_exposure_method, auto_exposure_bias,
+			auto_exposure_speed_up, auto_exposure_speed_down,
+			auto_exposure_max_brightness, auto_exposure_min_brightness,
+			lens_flare_intensity,
+			ambient_occlusion_intensity, ambient_occlusion_radius,
+			indirect_lighting_color_rgb, indirect_lighting_intensity,
+			motion_blur_amount
+		]() {
+		APIPCamera* camera = getCamera(camera_name);
+		const FLinearColor indirect_lighting_color(indirect_lighting_color_rgb[0], indirect_lighting_color_rgb[1], indirect_lighting_color_rgb[2]);
+		camera->setCameraPostProcess(
+			blend_weight,
+			bloom_intensity,
+			auto_exposure_method, auto_exposure_bias,
+			auto_exposure_speed_up, auto_exposure_speed_down,
+			auto_exposure_max_brightness, auto_exposure_min_brightness,
+			lens_flare_intensity,
+			ambient_occlusion_intensity, ambient_occlusion_radius,
+			indirect_lighting_color, indirect_lighting_intensity,
+			motion_blur_amount
+		);
+	},
+		true);
+}
+
 //parameters in NED frame
 PawnSimApi::Pose PawnSimApi::getPose() const
 {
