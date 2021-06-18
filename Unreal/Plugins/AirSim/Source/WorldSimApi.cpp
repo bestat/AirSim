@@ -121,7 +121,7 @@ std::string WorldSimApi::spawnObject(std::string& object_name, const std::string
 					// if the generated actor is a metahuman, we automatically set MetaHumanAnimBP to its body.
 					USkeletalMeshComponent* body = Cast<USkeletalMeshComponent>(NewActor->GetDefaultSubobjectByName(FName(TEXT("Body"))));
 					if (body) {
-						UAnimBlueprint* AnimBP = TSoftObjectPtr<UAnimBlueprint>(FSoftObjectPath(TEXT("/Game/Booth/metahuman_base_skel_AnimBP.metahuman_base_skel_AnimBP"))).LoadSynchronous();
+						UAnimBlueprint* AnimBP = TSoftObjectPtr<UAnimBlueprint>(FSoftObjectPath(TEXT("/AirSim/bestat/metahuman_base_skel_AnimBP.metahuman_base_skel_AnimBP"))).LoadSynchronous();
 						if (AnimBP) {
 							body->SetAnimInstanceClass(AnimBP->GetAnimBlueprintGeneratedClass());
 						}
