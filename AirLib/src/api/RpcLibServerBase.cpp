@@ -259,6 +259,36 @@ namespace airlib
             getVehicleSimApi(vehicle_name)->setCameraFoV(camera_name, fov_degrees);
         });
 
+		pimpl_->server.bind("simSetCameraImageSize", [&](const std::string& camera_name, const float width, const float height, const std::string& vehicle_name) -> void {
+			getVehicleSimApi(vehicle_name)->setCameraImageSize(camera_name, width, height);
+		});
+
+		pimpl_->server.bind("simSetCameraPostProcess", [&](
+			const std::string& camera_name,
+			const float blend_weight,
+			const float bloom_intensity,
+			const int auto_exposure_method, const float auto_exposure_bias,
+			const float auto_exposure_speed_up, const float auto_exposure_speed_down,
+			const float auto_exposure_max_brightness, const float auto_exposure_min_brightness,
+			const float lens_flare_intensity,
+			const float ambient_occlusion_intensity, const float ambient_occlusion_radius,
+			const std::vector<float>& indirect_lighting_color_rgb, const float indirect_lighting_intensity,
+			const float motion_blur_amount,
+			const std::string& vehicle_name) -> void {
+			getVehicleSimApi(vehicle_name)->setCameraPostProcess(
+				camera_name,
+				blend_weight,
+				bloom_intensity,
+				auto_exposure_method, auto_exposure_bias,
+				auto_exposure_speed_up, auto_exposure_speed_down,
+				auto_exposure_max_brightness, auto_exposure_min_brightness,
+				lens_flare_intensity,
+				ambient_occlusion_intensity, ambient_occlusion_radius,
+				indirect_lighting_color_rgb, indirect_lighting_intensity,
+				motion_blur_amount
+				);
+		});
+
         pimpl_->server.bind("simGetCollisionInfo", [&](const std::string& vehicle_name) -> RpcLibAdaptorsBase::CollisionInfo {
             const auto& collision_info = getVehicleSimApi(vehicle_name)->getCollisionInfo();
             return RpcLibAdaptorsBase::CollisionInfo(collision_info);
@@ -272,8 +302,8 @@ namespace airlib
             return getWorldSimApi()->loadLevel(level_name);
         });
 
-        pimpl_->server.bind("simSpawnObject", [&](string& object_name, const string& load_component, const RpcLibAdaptorsBase::Pose& pose, const RpcLibAdaptorsBase::Vector3r& scale, bool physics_enabled) -> string {
-            return getWorldSimApi()->spawnObject(object_name, load_component, pose.to(), scale.to(), physics_enabled);
+        pimpl_->server.bind("simSpawnObject", [&](string& object_name, const string& load_component, const RpcLibAdaptorsBase::Pose& pose, const RpcLibAdaptorsBase::Vector3r& scale, bool physics_enabled, bool from_actorBP) -> string {
+            return getWorldSimApi()->spawnObject(object_name, load_component, pose.to(), scale.to(), physics_enabled, from_actorBP);
         });
 
         pimpl_->server.bind("simDestroyObject", [&](const string& object_name) -> bool {
@@ -296,6 +326,10 @@ namespace airlib
 
         pimpl_->server.bind("simSetObjectScale", [&](const std::string& object_name, const RpcLibAdaptorsBase::Vector3r& scale) -> bool {
             return getWorldSimApi()->setObjectScale(object_name, scale.to());
+        });
+
+		pimpl_->server.bind("simSetMetahumanPose", [&](const std::string& object_name, const RpcLibAdaptorsBase::Vector3r& left_hand_IKposition, const RpcLibAdaptorsBase::Vector3r& left_hand_rotation, const RpcLibAdaptorsBase::Vector3r& right_hand_IKposition, const RpcLibAdaptorsBase::Vector3r& right_hand_rotation ) -> bool {
+            return getWorldSimApi()->setMetahumanPose(object_name, left_hand_IKposition.to(), left_hand_rotation.to(), right_hand_IKposition.to(), right_hand_rotation.to());
         });
 
         pimpl_->server.bind("simFlushPersistentMarkers", [&]() -> void {
