@@ -9,8 +9,12 @@ class CameraInfo():
         self.baseline = baseline
 
 class LevelInfo():
-    def __init__(self, position_range):
+    def __init__(self,
+        position_range,
+        auto_exposure_bias_range,
+    ):
         self.position_range = position_range
+        self.auto_exposure_bias_range = auto_exposure_bias_range
 
 def generate_random_position(range):
     d = np.random.rand(3)
@@ -39,6 +43,9 @@ def generate_random_quaternion():
 def angle_to_rad(angle):
     return angle * np.pi / 180.
 
+def generate_random_scalar(range):
+    return range[0] + (range[1] - range[0]) * np.random.rand()
+
 def main(
     camera_name, align_to_left_camera,
     image_width, image_heightm, requests,
@@ -65,14 +72,21 @@ def main(
     #client.simLoadLevel(level_name)
 
     # swapn humans/items
-    # TODO: add mask ID for this object
     human_name = 'human'
     human_BP_name = metahumans_bp_path_template.format('Taro')
     item_name = 'item'
-    item_static_mesh_name = 'lunchbox2'
+    #item_static_mesh_name = 'lunchbox2'
+    item_static_mesh_name = 'Banana_LOD0_vfendgyiw'
+    #item_static_mesh_name = 'Orange_LOD0_tibhfezva'
+    #item_static_mesh_name = 'Red_Apple_LOD0_tgzoahbpa'
 
-    #client.simSpawnObject(human_name, human_BP_name, physics_enabled=False, from_actorBP=True)
-    #client.simSpawnObject(item_name, item_static_mesh_name, physics_enabled=False, from_actorBP=False)
+    client.simSpawnObject(human_name, human_BP_name, physics_enabled=False, from_actorBP=True)
+    client.simSpawnObject(item_name, item_static_mesh_name, physics_enabled=False, from_actorBP=False)
+
+    #time.sleep(3)    # wait few seconds so that objects are completely spawned
+
+    client.simSetSegmentationObjectID(human_name, 1);
+    client.simSetSegmentationObjectID(item_name, 2);
 
     # generate data
     capture_folder = './capture_{}/'.format(timestamp)
@@ -135,23 +149,23 @@ def main(
 
         # request pose changes.
         client.simSetVehiclePose(world_to_camera.UE4ToAirSim())
-        #client.simSetObjectPose(human_name, world_to_human.UE4ToAirSim())
-        #client.simSetMetahumanPose(human_name, left_hand_IKposition, left_hand_rotation, right_hand_IKposition, right_hand_rotation)
-        #client.simSetObjectPose(item_name, world_to_item.UE4ToAirSim())
+        client.simSetObjectPose(human_name, world_to_human.UE4ToAirSim())
+        client.simSetMetahumanPose(human_name, left_hand_IKposition, left_hand_rotation, right_hand_IKposition, right_hand_rotation)
+        client.simSetObjectPose(item_name, world_to_item.UE4ToAirSim())
 
-        #time.sleep(0.001)  # sometimes images will be captured before the position/pose change is reflected. posing a light sleep can decrease such cases.
+        time.sleep(0.001)  # sometimes images will be captured before the position/pose change is reflected. posing a short sleep can decrease such chances.
 
         # request image captures
-        client.simSetCameraPostProcess(
-            "front_left",
-            #lens_flare_intensity = 0.0,
-            motion_blur_amount = 0.0,
-        )
-        client.simSetCameraPostProcess(
-            "front_right",
-            #lens_flare_intensity = 0.0,
-            motion_blur_amount = 0.0,
-        )
+        exposure_bias = generate_random_scalar(level_info.auto_exposure_bias_range)
+        for camera_name in ["front_left", "front_right"]:
+            client.simSetCameraPostProcess(
+                camera_name,
+                auto_exposure_bias = exposure_bias,
+                auto_exposure_max_brightness = 1.0, auto_exposure_min_brightness = 1.0,
+                lens_flare_intensity = 0.0,
+                motion_blur_amount = 0.0,
+            )
+
         responses = client.simGetImages(requests)
 
         # request attribute data
@@ -161,12 +175,11 @@ def main(
         for response, request in zip(responses, requests):
             img = airsim.decode_image_response(response)
             if img.dtype == np.float16:
-                img = np.asarray((img * 1000 - 2000).clip(0, 255), dtype=np.uint8)  # convert to an uint16 depth image with unit mm. (we are expecting that the depth camera range is up to 65m)
-                #img = np.asarray((img * 1000).clip(0, 65535), dtype=np.uint16)  # convert to an uint16 depth image with unit mm. (we are expecting that the depth camera range is up to 65m)
+                img = np.asarray((img * 1000).clip(0, 65535), dtype=np.uint16)  # convert to an uint16 depth image with unit mm. (we are expecting that the depth camera range is up to 65m)
 
             if request.image_type == airsim.ImageType.Scene:
                 name = 'rgb'
-            elif request.image_type == airsim.ImageType.DepthPerspective:
+            elif request.image_type == airsim.ImageType.DepthPlanar:
                 name = 'depth'    # be careful that simulated depth values are not so accurate at far range due to the limited bit-depth of rengdering depth buffer.
             elif request.image_type == airsim.ImageType.Segmentation:
                 name = 'mask'
@@ -182,8 +195,8 @@ def main(
 
             airsim.write_png('{}{:0>8}_{}.png'.format(capture_folder, idx, name), img)
 
-    #client.simDestroyObject(item_name)
-    #client.simDestroyObject(human_name)
+    client.simDestroyObject(item_name)
+    client.simDestroyObject(human_name)
 
 
 # custom info for your project
@@ -193,7 +206,18 @@ camera_info_list = {
 }
 
 level_info_list = {
-    'Room': LevelInfo(position_range=(80, 160, -570, -200, -90, -90)),
+    'BlueprintOffice': LevelInfo(
+        position_range=(-700, 700, 500, 2000, -90, -90),
+        auto_exposure_bias_range=(0.0, 2.0),
+    ),
+    'Room': LevelInfo(
+        position_range=(80, 160, -570, -200, -90, -90),
+        auto_exposure_bias_range=(2.0, 5.0),
+    ),
+    'RoomNight': LevelInfo(
+        position_range=(80, 160, -570, -200, -90, -90),
+        auto_exposure_bias_range=(3.0, 6.0),
+    ),
 }
 
 metahumans_hand_rotation_range = (-210, 60, -10, 30, -90, 90)
@@ -206,12 +230,12 @@ if __name__ == '__main__':
     image_width, image_height = 640, 360
     requests = [
         airsim.ImageRequest("front_left", airsim.ImageType.Scene, pixels_as_float=False),
-        #airsim.ImageRequest("front_left", airsim.ImageType.DepthPerspective, pixels_as_float=True),
-        airsim.ImageRequest("front_left", airsim.ImageType.Segmentation, pixels_as_float=False),
-        airsim.ImageRequest("front_right", airsim.ImageType.Scene, pixels_as_float=False),
+        #airsim.ImageRequest("front_left", airsim.ImageType.DepthPlanar, pixels_as_float=True),
+        #airsim.ImageRequest("front_left", airsim.ImageType.Segmentation, pixels_as_float=False),
+        #airsim.ImageRequest("front_right", airsim.ImageType.Scene, pixels_as_float=False),
     ]
-    level_name = 'Room'
-    num_capture = 1
+    level_name = 'BlueprintOffice'
+    num_capture = 10
 
     main(
         camera_name, align_to_left_camera,
