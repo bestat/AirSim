@@ -11,6 +11,9 @@ We list some of notable changes/typical use-cases:
 - You can spawn static meshes with simSpawnObject API. To change the current level, use simLoadLevel API.
 - Default Segmentation initialization setting is changed to None. You need to set segmentation ID explicitly on the editor or API to objects of your interest.
 
+Known issues:
+
+- simSetSegmentationID will not be reflected immediately. it looks that it takes few seconds until it is reflected.
 
 ## Last announcement
 
