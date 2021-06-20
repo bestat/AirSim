@@ -341,7 +341,7 @@ namespace airlib
                 StaticMeshName
             };
 
-            InitMethodType init_method = InitMethodType::CommonObjectsRandomIDs;
+            InitMethodType init_method = InitMethodType::None;
             bool override_existing = false;
             MeshNamingMethodType mesh_naming_method = MeshNamingMethodType::OwnerName;
         };
@@ -937,13 +937,14 @@ namespace airlib
             Settings json_parent;
             if (settings_json.getChild("SegmentationSettings", json_parent)) {
                 std::string init_method = Utils::toLower(json_parent.getString("InitMethod", ""));
-                if (init_method == "" || init_method == "commonobjectsrandomids")
+                if (init_method == "commonobjectsrandomids")
                     segmentation_setting.init_method = SegmentationSetting::InitMethodType::CommonObjectsRandomIDs;
                 else if (init_method == "none")
                     segmentation_setting.init_method = SegmentationSetting::InitMethodType::None;
                 else
+					segmentation_setting.init_method = SegmentationSetting::InitMethodType::None;
                     //TODO: below exception doesn't actually get raised right now because of issue in Unreal Engine?
-                    throw std::invalid_argument(std::string("SegmentationSetting init_method has invalid value in settings_json ") + init_method);
+                    //throw std::invalid_argument(std::string("SegmentationSetting init_method has invalid value in settings_json ") + init_method);
 
                 segmentation_setting.override_existing = json_parent.getBool("OverrideExisting", false);
 
