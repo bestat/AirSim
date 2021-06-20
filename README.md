@@ -9,6 +9,7 @@ We list some of notable changes/typical use-cases:
 - You no longer need to write down settings.json. The AirSimGameMode begins with ComputerVisionPawn by default. You can set the capture image size, postprocess settings from the AirSim Python client dynamically.
 - We support MetaHuman models developed by Quixel. Download it from Quixel Bridge and export it to your uproject. Please see /PythonClient/bestat/generator_script.py how to use the customized API's to manipulate these models.
 - You can spawn static meshes with simSpawnObject API. To change the current level, use simLoadLevel API.
+- Default Segmentation initialization setting is changed to None. You need to set segmentation ID explicitly on the editor or API to objects of your interest.
 
 
 ## Last announcement
