@@ -81,7 +81,7 @@ void APIPCamera::BeginPlay()
 
     for (unsigned int image_type = 0; image_type < imageTypeCount(); ++image_type) {
         //use final color for all calculations
-        captures_[image_type]->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
+        //captures_[image_type]->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
 
         render_targets_[image_type] = NewObject<UTextureRenderTarget2D>();
     }
@@ -322,7 +322,6 @@ void APIPCamera::setCameraPostProcess(
 	
 	auto& capture = captures_[Utils::toNumeric(ImageType::Scene)];
 	auto& render_target = render_targets_[Utils::toNumeric(ImageType::Scene)];
-	//render_target->TargetGamma = 1.f;
 
 	capture->PostProcessBlendWeight = blend_weight;
 
