@@ -94,6 +94,7 @@ def main(
     #client.simLoadLevel(level_name)    # TODO: after loading different level, position reference differs from what we expect. fix it.
 
     # swapn humans/items
+
     # TODO: find a way to immediately reflect segID change
     human_actor_name = 'human_{}'.format(timestamp)
     human_BP_name = metahumans_bp_path_template.format(human_name)
@@ -161,7 +162,6 @@ def main(
         right_hand_rotation = generate_random_position(metahumans_hand_rotation_range)  # relative to the bone
 
         # TODO: find a way to make crouching pose, natural foots, waist pose
-
         client.simSetMetahumanPose(human_actor_name, left_hand_IKposition, left_hand_rotation, right_hand_IKposition, right_hand_rotation)
 
         # derive the item pose

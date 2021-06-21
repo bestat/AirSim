@@ -1,3 +1,21 @@
+## Updates for project use in bestat
+
+Build & plugin installation process is the same as the original one. Please see the introduction pages in the official document.
+Just put the AirSim plugin to your uproject, open a level, set the gamemode to be AirSimGameMode and start Play.
+Now you can control scene/capture data with AirSim Python client script.
+
+We list some of notable changes/typical use-cases:
+
+- You no longer need to write down settings.json. The AirSimGameMode begins with ComputerVisionPawn by default. You can set the capture image size, postprocess settings from the AirSim Python client dynamically.
+- We support MetaHuman models developed by Quixel. Download it from Quixel Bridge and export it to your uproject. Please see /PythonClient/bestat/generator_script.py how to use the customized API's to manipulate these models.
+- You can spawn static meshes with simSpawnObject API. To change the current level, use simLoadLevel API.
+- Default Segmentation initialization setting is changed to None. You need to set segmentation ID explicitly on the editor or API to objects of your interest.
+
+Known issues:
+
+- simSetSegmentationID will not be reflected immediately. it looks that it takes few seconds until it is reflected.
+- if metahuman's hair groom uses physics simulation, it can disturbed too much on move. recommend to turn off manually (see https://docs.unrealengine.com/4.26/ja/WorkingWithContent/Hair/QuickStart/)
+
 ## Last announcement
 
 The AirSim team is trying to get a better understanding of how AirSim and other simulation engines are being used across the community. If you have a couple of minutes, please take a look and respond to the AirSim survey as it does have an impact on the features and direction of the platform:
