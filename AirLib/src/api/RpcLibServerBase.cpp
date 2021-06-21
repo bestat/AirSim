@@ -320,6 +320,10 @@ namespace airlib
             return RpcLibAdaptorsBase::Vector3r(scale);
         });
 
+		pimpl_->server.bind("simGetMetahumanBonePose", [&](const std::string& object_name, const std::string& bone_name) -> RpcLibAdaptorsBase::Pose {
+			return getWorldSimApi()->getMetahumanBonePose(object_name, bone_name);
+		});
+
         pimpl_->server.bind("simSetObjectPose", [&](const std::string& object_name, const RpcLibAdaptorsBase::Pose& pose, bool teleport) -> bool {
             return getWorldSimApi()->setObjectPose(object_name, pose.to(), teleport);
         });
