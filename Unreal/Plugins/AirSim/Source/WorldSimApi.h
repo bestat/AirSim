@@ -52,6 +52,7 @@ public:
     virtual Vector3r getObjectScale(const std::string& object_name) const override;
     virtual bool setObjectScale(const std::string& object_name, const Vector3r& scale) override;
 	virtual bool setMetahumanPose(const std::string& object_name, const Vector3r& left_hand_IKposition, const Vector3r& left_hand_rotation, const Vector3r& right_hand_IKposition, const Vector3r& right_hand_rotation);
+	virtual Pose getMetahumanBonePose(const std::string& object_name, const std::string& bone_name) const override;
 
     //----------- Plotting APIs ----------/
     virtual void simFlushPersistentMarkers() override;

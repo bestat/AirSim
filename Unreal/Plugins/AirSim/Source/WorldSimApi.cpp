@@ -413,6 +413,28 @@ bool WorldSimApi::setObjectPose(const std::string& object_name, const WorldSimAp
     return result;
 }
 
+WorldSimApi::Pose WorldSimApi::getMetahumanBonePose(const std::string& object_name, const std::string& bone_name) const
+{
+	Pose result = Pose::nanPose();
+
+	UAirBlueprintLib::RunCommandOnGameThread([this, &object_name, &bone_name, &result]() {
+
+		AActor* actor = simmode_->scene_object_map.FindRef(FString(object_name.c_str()));
+		if (actor) {
+			USkeletalMeshComponent* body = Cast<USkeletalMeshComponent>(actor->GetDefaultSubobjectByName(FName("Body")));
+			if (body) {
+				FName boneName(bone_name.c_str());
+				FVector location = body->GetBoneLocation(boneName);
+				FRotator rotation(body->GetBoneQuaternion(boneName));
+				result = simmode_->getGlobalNedTransform().toGlobalNed(FTransform(rotation, location));
+			}
+		}
+	},
+		true);
+
+	return result;
+}
+
 bool WorldSimApi::setObjectScale(const std::string& object_name, const Vector3r& scale)
 {
     bool result;
@@ -455,6 +477,9 @@ bool WorldSimApi::setMetahumanPose(const std::string& object_name, const Vector3
 			FVector(right_hand_IKposition[0], right_hand_IKposition[1], right_hand_IKposition[2]),
 			FRotator(right_hand_rotation[0], right_hand_rotation[1], right_hand_rotation[2])
 		);
+
+		body->TickAnimation(0.f, false);
+		body->RefreshBoneTransforms();
 
 		result = true;
 	},
