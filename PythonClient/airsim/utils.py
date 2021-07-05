@@ -99,7 +99,23 @@ def to_quaternion(pitch, roll, yaw):
     q.z_val = t1 * t2 * t4 - t0 * t3 * t5 #z
     return q
 
-    
+def pose_to_matrix44(pose, unit_change_scale=1):
+    w = pose.orientation.w_val
+    x = pose.orientation.x_val
+    y = pose.orientation.y_val
+    z = pose.orientation.z_val
+    w2 = w*w
+    x2 = x*x
+    y2 = y*y
+    z2 = z*z
+    s = 2 / (w2 + x2 + y2 + z2)
+    return np.asarray([
+        [1-s*(y2+z2), s*(x*y-w*z), s*(z*x+w*y), pose.position.x_val * unit_change_scale],
+        [s*(x*y+w*z), 1-s*(z2+x2), s*(y*z-w*x), pose.position.y_val * unit_change_scale],
+        [s*(z*x-w*y), s*(y*z+w*x), 1-s*(x2+y2), pose.position.z_val * unit_change_scale],
+        [0, 0, 0, 1],
+    ], dtype=np.float32)
+
 def wait_key(message = ''):
     ''' Wait for a key press on the console and return it. '''
     if message != '':
