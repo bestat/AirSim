@@ -14,7 +14,8 @@ We list some of notable changes/typical use-cases:
 Known issues:
 
 - simSetSegmentationID will not be reflected immediately. it looks that it takes few seconds until it is reflected.
-- if metahuman's hair groom uses physics simulation, it can disturbed too much on move. recommend to turn off manually (see https://docs.unrealengine.com/4.26/ja/WorkingWithContent/Hair/QuickStart/)
+- if metahuman's hair groom uses physics simulation, it can disturbed too much on move. we recommend to turn it off manually (see https://docs.unrealengine.com/4.26/ja/WorkingWithContent/Hair/QuickStart/).
+- depth value of hair groom boundary is blended with its background. any way to solve this?
 
 ## Last announcement
 
