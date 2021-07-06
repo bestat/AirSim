@@ -238,13 +238,12 @@ class Pose(MsgpackMixin):
             raise TypeError('unsupported operand type(s) for *: %s and %s' % ( str(type(self)), str(type(other))) )
 
         # use the famous dual quaternion representation of rigid poses
-        q0 = self.orientation
-        t0 = Quaternionr(0.5 * self.position.x_val, 0.5 * self.position.y_val, 0.5 * self.position.z_val, 0.)
-        q1 = other.orientation
-        q1_star = q1.star()
-        t1 = Quaternionr(0.5 * other.position.x_val, 0.5 * other.position.y_val, 0.5 * other.position.z_val, 0.)
+        q1 = self.orientation
+        t1 = Quaternionr(0.5 * self.position.x_val, 0.5 * self.position.y_val, 0.5 * self.position.z_val, 0.)
+        q0 = other.orientation
+        t0 = Quaternionr(0.5 * other.position.x_val, 0.5 * other.position.y_val, 0.5 * other.position.z_val, 0.)
         q2 = q1 * q0
-        t2 = q1 * t0 * q1_star + t1
+        t2 = q1 * t0 * q1.star() + t1
         return Pose(Vector3r(2. * t2.x_val, 2. * t2.y_val, 2. * t2.z_val), q2)
 
     @staticmethod
