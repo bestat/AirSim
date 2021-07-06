@@ -3,6 +3,7 @@ import time
 import itertools
 import numpy as np
 import airsim
+import json
 
 class CameraInfo():
     def __init__(self, HFOV, baseline):
@@ -21,8 +22,10 @@ class ItemInfo():
     def __init__(self,
         grab_offset,
         # TODO: add grab rotational offset
+        scale,
     ):
         self.grab_offset = grab_offset
+        self.scale = scale
 
 def generate_random_position(range):
     d = np.random.rand(3)
@@ -67,7 +70,7 @@ def generate_random_hand_reach(reach_range):
     return airsim.Vector3r(s_w * r, c_w * c_v * r, c_w * s_v * r)
 
 def main(
-    camera_name, align_to_left_camera,
+    camera_name, align_left_camera_to_center,
     image_width, image_heightm, requests,
     level_name, human_name, item_name,
     num_capture):
@@ -82,7 +85,7 @@ def main(
 
     # camera config
     # TODO: we might add random lense distortion for getting more realistic images.
-    lc, rc = (0.0, 1.0) if align_to_left_camera else (-0.5, 0.5)
+    lc, rc = (0.0, 1.0) if align_left_camera_to_center else (-0.5, 0.5)
     client.simSetCameraPose('front_left', airsim.Pose(airsim.Vector3r(0., lc * camera_info.baseline, 0.), airsim.Quaternionr()).UE4ToAirSim())
     client.simSetCameraFov('front_left', camera_info.HFOV)
     client.simSetCameraImageSize('front_left', image_width, image_height)
@@ -90,11 +93,23 @@ def main(
     client.simSetCameraFov('front_right', camera_info.HFOV)
     client.simSetCameraImageSize('front_right', image_width, image_height)
 
+    fx = 0.5 * image_width / np.tan(0.5 * angle_to_rad(camera_info.HFOV))
+    fy = fx
+    cx = 0.5 * image_width
+    cy = 0.5 * image_height
+
+    camera_matrix = np.asarray([
+        [fx, 0, cx],
+        [0, fy, cy],
+        [0, 0, 1],
+    ], dtype=np.float32)
+
+    # the pinhole cameras has no distortion
+
     # load level
     #client.simLoadLevel(level_name)    # TODO: after loading different level, position reference differs from what we expect. fix it.
 
     # swapn humans/items
-
     # TODO: find a way to immediately reflect segID change
     human_actor_name = 'human_{}'.format(timestamp)
     human_BP_name = metahumans_bp_path_template.format(human_name)
@@ -104,6 +119,7 @@ def main(
     if item_name != 'none':
         item_actor_name = 'item_{}'.format(timestamp)
         client.simSpawnObject(item_actor_name, item_name, physics_enabled=False, from_actorBP=False)
+        client.simSetObjectScale(item_actor_name, airsim.Vector3r(item_info.scale, item_info.scale, item_info.scale))
         client.simSetSegmentationObjectID(item_actor_name, 2);
 
     # sometimes the metahuman's hands are splited away from the body in the first frame... wait a little to avoid it
@@ -125,7 +141,7 @@ def main(
         base_rotation = generate_random_rotation((0, 0, 1), (0, 360))
         #base_rotation = airsim.Quaternionr()
         #base_rotation = generate_random_rotation((0, 0, 1), (90, 90))
-        world_to_base = airsim.Pose(base_position, base_rotation)
+        base_to_world = airsim.Pose(base_position, base_rotation)
 
         # derive the stereo camera position
         camera_roll_error = 0#5
@@ -136,10 +152,10 @@ def main(
         #camera_rotation = generate_random_rotation((0, 0, 1), (-150, -150))
         camera_position = generate_random_position((-17 - camera_horiz_error, -17 + camera_horiz_error, 0 - camera_horiz_error, 0 + camera_horiz_error, 212.5 - camera_height_error, 212.5 + camera_height_error))
         camera_rotation = generate_random_rotation((0, 0, 1), (-camera_roll_error, camera_roll_error)) * generate_random_rotation((0, 1, 0), (90 - camera_pitch_error, 90 + camera_pitch_error))
-        base_to_camera = airsim.Pose(camera_position, camera_rotation)
-        world_to_camera = base_to_camera * world_to_base
+        camera_to_base = airsim.Pose(camera_position, camera_rotation)
+        camera_to_world = base_to_world * camera_to_base
 
-        client.simSetVehiclePose(world_to_camera.UE4ToAirSim())
+        client.simSetVehiclePose(camera_to_world.UE4ToAirSim())
 
         # derive the human position
         # TODO: add human skelton scaling variation
@@ -148,10 +164,10 @@ def main(
         #human_position = generate_random_position((-40, -40, 0, 0, -crouching_diff, -crouching_diff))
         human_rotation_diff = 20 #20#60
         human_rotation = generate_random_rotation((0, 0, 1), (-90 - human_rotation_diff, -90 + human_rotation_diff))
-        base_to_human = airsim.Pose(human_position, human_rotation)
-        world_to_human = base_to_human * world_to_base
+        human_to_base = airsim.Pose(human_position, human_rotation)
+        human_to_world = base_to_world * human_to_base
 
-        client.simSetObjectPose(human_actor_name, world_to_human.UE4ToAirSim())
+        client.simSetObjectPose(human_actor_name, human_to_world.UE4ToAirSim())
 
         # derive the human pose
         left_hand_IKposition = airsim.Vector3r(50, 0, -100)  # relative to the clavicle
@@ -162,15 +178,29 @@ def main(
         right_hand_rotation = generate_random_position(metahumans_hand_rotation_range)  # relative to the bone
 
         # TODO: find a way to make crouching pose, natural foots, waist pose
+
         client.simSetMetahumanPose(human_actor_name, left_hand_IKposition, left_hand_rotation, right_hand_IKposition, right_hand_rotation)
+
+        #head_to_world = client.simGetMetahumanBonePose(human_actor_name, 'head').AirSimToUE4()
+        right_upperarm_to_world = client.simGetMetahumanBonePose(human_actor_name, 'upperarm_r').AirSimToUE4()
+        right_lowerarm_to_world = client.simGetMetahumanBonePose(human_actor_name, 'lowerarm_r').AirSimToUE4()
+        right_hand_to_world = client.simGetMetahumanBonePose(human_actor_name, 'hand_r').AirSimToUE4()
+        right_middle_01_to_world = client.simGetMetahumanBonePose(human_actor_name, 'middle_01_r').AirSimToUE4()
+        #right_middle_02_to_world = client.simGetMetahumanBonePose(human_actor_name, 'middle_02_r').AirSimToUE4()
+        #right_middle_03_to_world = client.simGetMetahumanBonePose(human_actor_name, 'middle_03_r').AirSimToUE4()
+        left_upperarm_to_world = client.simGetMetahumanBonePose(human_actor_name, 'upperarm_l').AirSimToUE4()
+        left_lowerarm_to_world = client.simGetMetahumanBonePose(human_actor_name, 'lowerarm_l').AirSimToUE4()
+        left_hand_to_world = client.simGetMetahumanBonePose(human_actor_name, 'hand_l').AirSimToUE4()
+        left_middle_01_to_world = client.simGetMetahumanBonePose(human_actor_name, 'middle_01_l').AirSimToUE4()
+        #left_middle_02_to_world = client.simGetMetahumanBonePose(human_actor_name, 'middle_02_l').AirSimToUE4()
+        #left_middle_03_to_world = client.simGetMetahumanBonePose(human_actor_name, 'middle_03_l').AirSimToUE4()
 
         # derive the item pose
         if item_name != 'none':
-            hand_pose_world = client.simGetMetahumanBonePose(human_actor_name, 'middle_01_r').AirSimToUE4()
-            hand_to_item = airsim.Pose(airsim.Vector3r(0, item_info.grab_offset, 0), generate_random_rotation((0, 0, 1), (0, 360)))
-            world_to_item = hand_to_item * hand_pose_world
+            item_to_right_middle_01 = airsim.Pose(airsim.Vector3r(0, item_info.grab_offset, 0), generate_random_rotation((0, 0, 1), (0, 360)))
+            item_to_world = right_middle_01_to_world * item_to_right_middle_01
             
-            client.simSetObjectPose(item_actor_name, world_to_item.UE4ToAirSim())
+            client.simSetObjectPose(item_actor_name, item_to_world.UE4ToAirSim())
 
         # request image captures
         exposure_bias = generate_random_scalar(level_info.auto_exposure_bias_range)
@@ -186,20 +216,50 @@ def main(
         responses = client.simGetImages(requests)
 
         # request attribute data
-        # TODO: gather data useful for machine learning (camera params, key points, etc)
+        attributes = {
+            'camera_intrinsics': camera_matrix.tolist(),
+            'stereo_baseline':  camera_info.baseline,
+            'left_camera_is_aligned_to_center': align_left_camera_to_center,
+        }
+
+        if True:
+            attributes['camera_to_world'] = airsim.pose_to_matrix44(camera_to_world).tolist()
+            #attributes['head_to_world'] = airsim.pose_to_matrix44(head_to_world).tolist()
+            attributes['right_upperarm_to_world'] = airsim.pose_to_matrix44(right_upperarm_to_world).tolist()
+            attributes['right_lowerarm_to_world'] = airsim.pose_to_matrix44(right_lowerarm_to_world).tolist()
+            attributes['right_hand_to_world'] = airsim.pose_to_matrix44(right_hand_to_world).tolist()
+            attributes['right_middle_01_to_world'] = airsim.pose_to_matrix44(right_middle_01_to_world).tolist()
+            #attributes['right_middle_02_to_world'] = airsim.pose_to_matrix44(right_middle_02_to_world).tolist()
+            #attributes['right_middle_03_to_world'] = airsim.pose_to_matrix44(right_middle_03_to_world).tolist()
+            attributes['left_upperarm_to_world'] = airsim.pose_to_matrix44(left_upperarm_to_world).tolist()
+            attributes['left_lowerarm_to_world'] = airsim.pose_to_matrix44(left_lowerarm_to_world).tolist()
+            attributes['left_hand_to_world'] = airsim.pose_to_matrix44(left_hand_to_world).tolist()
+            attributes['left_middle_01_to_world'] = airsim.pose_to_matrix44(left_middle_01_to_world).tolist()
+            #attributes['left_middle_02_to_world'] = airsim.pose_to_matrix44(left_middle_02_to_world).tolist()
+            #attributes['left_middle_03_to_world'] = airsim.pose_to_matrix44(left_middle_03_to_world).tolist()
+
+        with open('{}{:0>8}_{}.json'.format(capture_folder, idx, 'attributes'), 'w') as f:
+            json.dump(attributes, f, indent=2)
 
         # save images and attribute data
         for response, request in zip(responses, requests):
             img = airsim.decode_image_response(response)
             if img.dtype == np.float16:
-                img = np.asarray((img * 1000).clip(0, 65535), dtype=np.uint16)  # convert to an uint16 depth image with unit mm. (we are expecting that the depth camera range is up to 65m)
+                img = np.asarray((img * 1000).clip(1, 65535), dtype=np.uint16)  # convert to an uint16 depth image with unit mm. (we are expecting that the depth camera range is up to 65m)
 
             if request.image_type == airsim.ImageType.Scene:
                 name = 'rgb'
+                ext = '.png'
+                #ext = '.jpg'
             elif request.image_type == airsim.ImageType.DepthPlanar:
                 name = 'depth'    # be careful that simulated depth values are not so accurate at far range due to the limited bit-depth of rengdering depth buffer.
+                ext = '.png'
+            elif request.image_type == airsim.ImageType.DepthPerspective:
+                name = 'depthPers'    # be careful that simulated depth values are not so accurate at far range due to the limited bit-depth of rengdering depth buffer.
+                ext = '.png'
             elif request.image_type == airsim.ImageType.Segmentation:
                 name = 'mask'
+                ext = '.png'
             else:
                 raise Exception('no impl')
 
@@ -210,7 +270,7 @@ def main(
             else:
                 raise Exception('no impl')
 
-            airsim.write_png('{}{:0>8}_{}.png'.format(capture_folder, idx, name), img)
+            airsim.write_png('{}{:0>8}_{}{}'.format(capture_folder, idx, name, ext), img)
 
     if item_name != 'none':
         client.simDestroyObject(item_actor_name)
@@ -238,21 +298,27 @@ level_info_list = {
     ),
 }
 
+# TODO: make offset & scale a bit random
 item_info_list = {
     'none': ItemInfo(
         grab_offset=0,
+        scale=1,
     ),
     'lunchbox2': ItemInfo(
         grab_offset=10,
+        scale=1,
     ),
     'Banana_LOD0_vfendgyiw': ItemInfo(
         grab_offset=5,
+        scale=1,
     ),
     'Orange_LOD0_tibhfezva': ItemInfo(
         grab_offset=5,
+        scale=2,
     ),
     'Red_Apple_LOD0_tgzoahbpa': ItemInfo(
         grab_offset=5,
+        scale=1.5,
     ),
 }
 
@@ -263,42 +329,45 @@ metahumans_bp_path_template = '/Game/MetaHumans/{0}/BP_{0}.BP_{0}_C'
 if __name__ == '__main__':
 
     camera_name = 'zed-mini'
-    align_to_left_camera = True
+    align_left_camera_to_center = True
     image_width, image_height = 640, 360
     requests = [
         airsim.ImageRequest("front_left", airsim.ImageType.Scene, pixels_as_float=False),
-        #airsim.ImageRequest("front_left", airsim.ImageType.DepthPlanar, pixels_as_float=True),
+        airsim.ImageRequest("front_left", airsim.ImageType.DepthPlanar, pixels_as_float=True),
         airsim.ImageRequest("front_left", airsim.ImageType.Segmentation, pixels_as_float=False),
-        #airsim.ImageRequest("front_right", airsim.ImageType.Scene, pixels_as_float=False),
+        airsim.ImageRequest("front_right", airsim.ImageType.Scene, pixels_as_float=False),
+        airsim.ImageRequest("front_right", airsim.ImageType.DepthPlanar, pixels_as_float=True),
+        airsim.ImageRequest("front_right", airsim.ImageType.Segmentation, pixels_as_float=False),
     ]
 
     level_names = [
-        #'BlueprintOffice',
+        'BlueprintOffice',
         #'Room',
-        'RoomNight',
+        #'RoomNight',
     ]
 
     human_names = [
         'Taro',
-        'Zeva',
-        'Glenda',
-        'Bryan',
+        #'Zeva',
+        #'Glenda',
+        #'Bryan',
     ]
 
+    # TODO: banana's texture is not assigned when it is near the camera. fix it!
     item_names = [
         'none',
-        'lunchbox2',
-        'Banana_LOD0_vfendgyiw',
-        'Orange_LOD0_tibhfezva',
-        'Red_Apple_LOD0_tgzoahbpa',
+        #'lunchbox2',
+        #'Banana_LOD0_vfendgyiw',
+        #'Orange_LOD0_tibhfezva',
+        #'Red_Apple_LOD0_tgzoahbpa',
     ]
 
-    num_capture = 250
+    num_capture = 10
 
     for level_name, human_name, item_name in itertools.product(level_names, human_names, item_names):
 
         main(
-            camera_name, align_to_left_camera,
+            camera_name, align_left_camera_to_center,
             image_width, image_height, requests,
             level_name, human_name, item_name,
             num_capture
